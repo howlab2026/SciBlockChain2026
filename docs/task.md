@@ -1,20 +1,52 @@
-# SciBlockChain 개발 체크리스트
+# SciBlockChain v2.0 개발 및 구축 체크리스트
 
-- [x] 프로젝트 초기화 및 환경 설정
-  - [x] `npm` 및 `vite` 프로젝트 생성
-  - [x] 필요한 라이브러리 설치 (예: lucide-react, canvas-confetti 등)
+## 1단계: 프로젝트 기초 구축 및 모놀리식 프로토타입
+- [x] `npm` 및 `vite` 프로젝트 생성 (React 19 + TypeScript + Vite)
+- [x] 핵심 라이브러리 설치 (`lucide-react`, `canvas-confetti` 등)
 - [x] 블록체인 코어 엔진 개발 (`src/blockchain.ts`)
-  - [x] `Transaction` 클래스 및 디지털 서명 모사 구현
-  - [x] `Block` 클래스 및 작업 증명(PoW) 마이닝 로직 구현
-  - [x] `Blockchain` 클래스 (체인 무결성 검증, 멤풀, 잔액 계산 등) 구현
-- [x] UI 스타일링 및 디자인 시스템 적용 (`src/index.css`)
-  - [x] Space/Neon 다크 테마 배경 및 애니메이션 효과 설정
-  - [x] Glassmorphism 카드 및 버튼 스타일링 구성
-- [x] 메인 어플리케이션 개발 (`src/App.tsx` 등)
-  - [x] 전역 블록체인 및 상태 관리 설정
-  - [x] **관람객 뷰(Visitor Mode)**: 가상 지갑 생성, 모의 카드 결제 및 SciBlockChain 충전, 송금/QR 결제 기능
-  - [x] **부스 뷰(Booth Mode)**: 부스 등록 및 체험비 설정, 결제용 QR 코드 생성, 실시간 결제 완료 이벤트 리스닝
-  - [x] **익스플로러 뷰(Explorer Mode)**: 실시간 블록 체인 연결 그래프, 블록 채굴 프로세스 모니터링 및 무결성 검사
-- [x] 검증 및 폴리싱
-  - [x] 카드 결제 -> 코인 충전 -> 부스 결제 -> 채굴 -> 원장 반영 시나리오 테스트
-  - [x] 모바일 반응형 디자인 점검 및 웹 비디오 녹화/스크린샷 생성
+  - [x] SHA-256 기반 `Transaction` 및 디지털 서명 검증 구현
+  - [x] `Block` 및 작업 증명(PoW) 마이닝 알고리즘 구현
+  - [x] `Blockchain` 원장 관리, 무결성 검증, 멤풀, 통계 메서드 구현
+
+## 2단계: 모듈화 모던 아키텍처 리팩토링
+- [x] 타입 및 인터페이스 분리 ([src/types.ts](file:///c:/Work/AntiGravity/BlockChainEco_001/src/types.ts))
+- [x] 커스텀 훅 추출
+  - [x] [useBlockchain.ts](file:///c:/Work/AntiGravity/BlockChainEco_001/src/hooks/useBlockchain.ts): 상태, 채굴, 파생 상태 통합
+  - [x] [useToast.ts](file:///c:/Work/AntiGravity/BlockChainEco_001/src/hooks/useToast.ts): 비차단형 알림 제어
+- [x] 독립 UI 컴포넌트 개발 및 분리
+  - [x] [Toast.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/Toast.tsx): 슬라이드 토스트 팝업
+  - [x] [NetworkStatsBar.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/NetworkStatsBar.tsx): 실시간 네트워크 현황 바
+  - [x] [CardPaymentModal.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/CardPaymentModal.tsx): 가상 카드 결제 모달
+  - [x] [TransactionReceipt.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/TransactionReceipt.tsx): 암호학 결제 영수증 & 인쇄
+  - [x] [VisualQRCode.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/VisualQRCode.tsx): SVG 기반 QR 코드
+- [x] 5대 탭 뷰 모듈화
+  - [x] [WalletTab.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/WalletTab.tsx): 다중 지갑 & 송금
+  - [x] [BoothTab.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/BoothTab.tsx): 부스 등록 & QR 결제
+  - [x] [ExplorerTab.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/ExplorerTab.tsx): 원장 시각화, 검색/필터, 위변조 실습
+  - [x] [AnalyticsTab.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/AnalyticsTab.tsx): SVG KPI/차트 데이터 분석
+  - [x] [AdminTab.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/AdminTab.tsx): 신규 토큰 민팅 & 관제 센터
+
+## 3단계: 첫화면(랜딩 포털) 및 역할 분리 시스템
+- [x] 포털 첫화면 [LandingScreen.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/LandingScreen.tsx) 구현
+  - [x] 관람객 모드 vs 관리자 모드 선택 카드
+  - [x] 실시간 네트워크 프리뷰 지표 탑재
+- [x] 관리자 승인 로그인 모달 [AdminLoginModal.tsx](file:///c:/Work/AntiGravity/BlockChainEco_001/src/components/AdminLoginModal.tsx)
+  - [x] ID (`admin`) / PW (`admin1234`) 승인 로직
+  - [x] 테스트용 원클릭 자동 입력 기능
+- [x] 역할 기반 UI (General User View vs Admin Control Center) 완전 분리
+
+## 4단계: 신규 코인 발행 (Coin Issuance) 메뉴 전면 재설계
+- [x] 관리자 대시보드 최상단 황금빛 신규 코인 발행 패널 배치
+- [x] 원클릭 토큰 프리셋 템플릿 (`SciBlockChain`, `SciEduToken`, `FestivalCoin`)
+- [x] 토큰 심볼, 유효기간, 제네시스 공급량 설정 및 원장 스마트 계약 배포 로직 연동
+
+## 5단계: 소프트 파스텔 톤 (Soft Pastel Light Theme) 디자인 전환
+- [x] 크리미 파스텔 소프트 그래디언트 배경 및 투명 화이트 글래스 카드 적용
+- [x] 슬레이트 고대비 텍스트 및 소프트 파스텔 필 버튼 디자인 적용
+- [x] 전체 컴포넌트 파스텔 테마 호환성 검증
+
+## 6단계: 깃허브 저장소 연동 및 Vercel 배포
+- [x] Vercel SPA 라우팅용 `vercel.json` 구성
+- [x] GitHub 원격 저장소 커밋 및 푸시 ([https://github.com/howlab2026/SciBlockChain2026](https://github.com/howlab2026/SciBlockChain2026))
+- [x] Vercel 프로덕션 배포 구성 (`sci-block-chain2026`)
+- [x] 전체 자동화 검증 (`npx tsc --noEmit` & `npm run build` 0 Errors)
