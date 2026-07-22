@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Wallet, QrCode, Database, BarChart2,
   Zap, ShieldAlert, Shield, LogOut, Home, Coins
@@ -35,10 +35,10 @@ function ConfirmModal({ config, onClose }: {
 }) {
   if (!config.show) return null;
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}>
-      <div className="glass-card" style={{ width: '400px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid rgba(59,130,246,0.3)', boxShadow: '0 20px 50px rgba(59,130,246,0.25)', animation: 'fadeIn 0.2s ease' }}>
-        <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'white' }}>{config.title}</h3>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{config.message}</p>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}>
+      <div className="glass-card" style={{ width: '400px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid rgba(147,197,253,0.6)', boxShadow: '0 20px 50px rgba(148,163,184,0.2)', animation: 'fadeIn 0.2s ease', background: '#ffffff' }}>
+        <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b' }}>{config.title}</h3>
+        <p style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{config.message}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
           <button onClick={onClose} className="neon-btn btn-secondary" style={{ padding: '8px 20px', fontSize: '13px' }}>취소</button>
           <button onClick={() => { config.onOk(); onClose(); }} className="neon-btn btn-primary" style={{ padding: '8px 20px', fontSize: '13px' }}>확인</button>
@@ -52,12 +52,12 @@ function ExpiredBanner({ expiryDate }: { expiryDate: string }) {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
   return (
-    <div style={{ margin: '0 16px 10px', padding: '10px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ margin: '0 16px 10px', padding: '10px 16px', background: 'rgba(254,226,226,0.8)', border: '1px solid rgba(252,165,165,0.8)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <ShieldAlert size={16} color="#ef4444" />
-        <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>코인 유효기간 만료됨 ({expiryDate}) — 어드민 탭에서 재발행하세요.</span>
+        <ShieldAlert size={16} color="#dc2626" />
+        <span style={{ fontSize: '13px', color: '#b91c1c', fontWeight: '600' }}>코인 유효기간 만료됨 ({expiryDate}) — 어드민 탭에서 재발행하세요.</span>
       </div>
-      <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}>✕</button>
+      <button onClick={() => setDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b' }}>✕</button>
     </div>
   );
 }
@@ -74,30 +74,24 @@ export default function App() {
 
   const { toasts, addToast, removeToast } = useToast();
 
-  // Mode and authentication state
   const [viewMode, setViewMode] = useState<ViewMode>('landing');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
 
-  // Tab state
   const [activeTab, setActiveTab] = useState<ActiveTab>('wallet');
 
-  // Booth state
   const [booths, setBooths] = useState<Booth[]>(DEFAULT_BOOTHS);
   const [activeBoothId, setActiveBoothId] = useState(DEFAULT_BOOTHS[0].id);
 
-  // Multi-visitor state
   const [visitors, setVisitors] = useState<VisitorWallet[]>([
     makeWallet('이과학'),
     makeWallet('박과학'),
   ]);
   const [activeVisitorIndex, setActiveVisitorIndex] = useState(0);
 
-  // Transaction state
   const [processedTxIds, setProcessedTxIds] = useState<Record<string, boolean>>({});
   const [originalTransactions, setOriginalTransactions] = useState<Record<string, number>>({});
 
-  // Modals
   const [showCardModal, setShowCardModal] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [confirmConfig, setConfirmConfig] = useState({ show: false, title: '', message: '', onOk: () => {} });
@@ -118,7 +112,6 @@ export default function App() {
   const coinName = blockchainRef.current.coinName;
   const expiryDate = blockchainRef.current.expiryDate;
 
-  // Handle tab click with permission check
   const handleTabClick = (tabId: ActiveTab) => {
     if (tabId === 'settings' && !isAdminAuthenticated) {
       addToast('info', '관리자 승인 필요', '어드민 메뉴를 이용하려면 관리자 승인이 필요합니다.');
@@ -140,7 +133,6 @@ export default function App() {
     addToast('info', '관리자 로그아웃', '일반 사용자 모드로 전환되었습니다.');
   };
 
-  // Tab definitions
   const userTabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
     { id: 'wallet',    label: '관람객 지갑', icon: <Wallet size={16} /> },
     { id: 'booth',     label: '체험 부스',   icon: <QrCode size={16} /> },
@@ -156,7 +148,6 @@ export default function App() {
     { id: 'analytics', label: '분석 대시보드', icon: <BarChart2 size={16} /> },
   ];
 
-  // Render Landing Screen if in landing viewMode
   if (viewMode === 'landing') {
     return (
       <>
@@ -180,18 +171,18 @@ export default function App() {
   const activeTabs = isAdminAuthenticated ? adminTabs : userTabs;
 
   return (
-    <div id="app-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-dark)' }}>
+    <div id="app-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-deep)' }}>
 
       {/* HEADER */}
       <header style={{
         padding: '14px 24px',
         background: isAdminAuthenticated
-          ? 'linear-gradient(90deg, rgba(139,92,246,0.18), rgba(7,9,19,0.95))'
-          : 'rgba(7,9,19,0.85)',
+          ? 'linear-gradient(90deg, rgba(243,232,255,0.9), rgba(255,255,255,0.9))'
+          : 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(16px)',
         borderBottom: isAdminAuthenticated
-          ? '1px solid rgba(139,92,246,0.4)'
-          : '1px solid rgba(255,255,255,0.06)',
+          ? '1px solid rgba(192,132,252,0.5)'
+          : '1px solid rgba(226,232,240,0.8)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -200,30 +191,30 @@ export default function App() {
             style={{
               cursor: 'pointer', width: '40px', height: '40px', borderRadius: '12px',
               background: isAdminAuthenticated
-                ? 'linear-gradient(135deg, #7c3aed, #d97706)'
-                : 'linear-gradient(135deg, #1e40af, #7c3aed)',
+                ? 'linear-gradient(135deg, #a855f7, #d97706)'
+                : 'linear-gradient(135deg, #6366f1, #3b82f6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: isAdminAuthenticated ? '0 4px 15px rgba(124,58,237,0.4)' : '0 4px 15px rgba(59,130,246,0.3)'
+              boxShadow: isAdminAuthenticated ? '0 4px 15px rgba(168,85,247,0.3)' : '0 4px 15px rgba(99,102,241,0.3)'
             }}
           >
             <Zap size={22} color="white" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '19px', fontWeight: '800', background: 'linear-gradient(90deg, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h1 style={{ fontSize: '19px', fontWeight: '800', background: 'linear-gradient(90deg, #4f46e5, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {coinName}
               </h1>
               {isAdminAuthenticated ? (
-                <span style={{ fontSize: '11px', background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(245,158,11,0.3))', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.5)', padding: '3px 10px', borderRadius: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '11px', background: 'rgba(245,158,11,0.15)', color: '#b45309', border: '1px solid rgba(245,158,11,0.4)', padding: '3px 10px', borderRadius: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Shield size={12} /> 🛡️ 관리자 승인됨
                 </span>
               ) : (
-                <span style={{ fontSize: '11px', background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)', padding: '3px 10px', borderRadius: '12px', fontWeight: '600' }}>
+                <span style={{ fontSize: '11px', background: 'rgba(99,102,241,0.1)', color: '#4338ca', border: '1px solid rgba(99,102,241,0.25)', padding: '3px 10px', borderRadius: '12px', fontWeight: '600' }}>
                   관람객 모드
                 </span>
               )}
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+            <p style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
               {isAdminAuthenticated ? '시스템 관리자 전용 어드민 관제 센터' : '과학제전 블록체인 부스 결제 시뮬레이션 시스템'}
             </p>
           </div>
@@ -251,17 +242,17 @@ export default function App() {
             <button
               onClick={() => setShowAdminLoginModal(true)}
               className="neon-btn btn-primary"
-              style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #3b82f6)' }}
+              style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
             >
               <Shield size={13} /> 관리자 로그인
             </button>
           )}
 
           {/* Chain health badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: isChainHealthy ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', borderRadius: '20px', border: `1px solid ${isChainHealthy ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: isChainHealthy ? 'rgba(20,184,166,0.1)' : 'rgba(239,68,68,0.1)', borderRadius: '20px', border: `1px solid ${isChainHealthy ? 'rgba(20,184,166,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
             {isChainHealthy
-              ? <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} /><span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600' }}>Chain OK</span></>
-              : <><ShieldAlert size={12} color="#ef4444" className="animate-pulse" /><span style={{ fontSize: '11px', color: '#f87171', fontWeight: '600' }}>위변조 감지</span></>
+              ? <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0d9488' }} /><span style={{ fontSize: '11px', color: '#0f766e', fontWeight: '600' }}>Chain OK</span></>
+              : <><ShieldAlert size={12} color="#dc2626" className="animate-pulse" /><span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>위변조 감지</span></>
             }
           </div>
         </div>
@@ -395,7 +386,7 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer style={{ padding: '14px 24px', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(7,9,19,0.8)' }}>
+      <footer style={{ padding: '14px 24px', textAlign: 'center', fontSize: '11px', color: '#64748b', borderTop: '1px solid rgba(226,232,240,0.8)', background: 'rgba(255,255,255,0.7)' }}>
         © 2026 {coinName} Blockchain EcoSystem · 과학전람회 블록체인 결제 시뮬레이터 v2.0
       </footer>
 

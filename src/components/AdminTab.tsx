@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Settings, Coins, AlertTriangle, Sparkles, Activity } from 'lucide-react';
 import { Blockchain } from '../blockchain';
 import type { ToastType } from '../hooks/useToast';
@@ -97,61 +97,61 @@ export function AdminTab({
       {/* TOP BANNER / TITLE */}
       <div className="glass-card" style={{
         padding: '24px 28px',
-        background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(245,158,11,0.1))',
-        border: '1px solid rgba(139,92,246,0.3)',
+        background: 'linear-gradient(135deg, rgba(243,232,255,0.9), rgba(254,243,199,0.9))',
+        border: '1px solid rgba(192,132,252,0.6)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            width: '52px', height: '52px', borderRadius: '14px',
-            background: 'linear-gradient(135deg, #7c3aed, #d97706)',
+            width: '52px', height: '52px', borderRadius: '16px',
+            background: 'linear-gradient(135deg, #a855f7, #d97706)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(124,58,237,0.4)'
+            boxShadow: '0 4px 20px rgba(168,85,247,0.3)'
           }}>
             <Coins size={28} color="white" />
           </div>
           <div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'white' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>
               🛡️ 시스템 관리자 관제 센터 (Admin Control Center)
             </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '3px' }}>
+            <p style={{ fontSize: '13px', color: '#475569', marginTop: '3px' }}>
               신규 코인 민팅, 스마트 계약 설정, 네트워크 채굴 난이도 조절 및 원장 무결성을 관제합니다.
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'right' }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block' }}>현재 활성 코인</span>
-            <strong style={{ fontSize: '14px', color: '#fbbf24' }}>{bc.coinName}</strong>
+          <div style={{ padding: '8px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'right' }}>
+            <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>현재 활성 코인</span>
+            <strong style={{ fontSize: '14px', color: '#b45309' }}>{bc.coinName}</strong>
           </div>
-          <div style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'right' }}>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block' }}>총 블록 수</span>
-            <strong style={{ fontSize: '14px', color: '#60a5fa' }}>{bc.chain.length} 개</strong>
+          <div style={{ padding: '8px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'right' }}>
+            <span style={{ fontSize: '10px', color: '#64748b', display: 'block' }}>총 블록 수</span>
+            <strong style={{ fontSize: '14px', color: '#4338ca' }}>{bc.chain.length} 개</strong>
           </div>
         </div>
       </div>
 
-      {/* SECTION 1: PROMINENT COIN ISSUANCE PANEL (최상단 코인 발행 메뉴) */}
+      {/* SECTION 1: PROMINENT COIN ISSUANCE PANEL */}
       <div className="glass-card" style={{
         padding: '28px',
-        border: '2px solid rgba(245,158,11,0.4)',
-        boxShadow: '0 10px 40px rgba(245,158,11,0.15)',
-        background: 'linear-gradient(180deg, rgba(245,158,11,0.06) 0%, rgba(13,18,36,0.6) 100%)',
+        border: '2px solid rgba(245,158,11,0.5)',
+        boxShadow: '0 10px 40px rgba(245,158,11,0.12)',
+        background: 'linear-gradient(180deg, rgba(254,243,199,0.5) 0%, rgba(255,255,255,0.95) 100%)',
         display: 'flex', flexDirection: 'column', gap: '22px'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ padding: '3px 10px', background: 'rgba(245,158,11,0.2)', color: '#fbbf24', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
+              <span style={{ padding: '4px 12px', background: 'rgba(245,158,11,0.2)', color: '#b45309', borderRadius: '12px', fontSize: '11px', fontWeight: '800' }}>
                 핵심 어드민 메뉴
               </span>
-              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Coins size={22} color="#fbbf24" />
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Coins size={22} color="#d97706" />
                 🪙 신규 코인 발행 &amp; 스마트 계약 구동 (Coin Issuance &amp; Minting)
               </h3>
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
+            <p style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>
               토큰 명칭, 유효기간, 제네시스 공급량을 설정하여 블록체인 네트워크 상에 신규 암호화폐를 구동하고 제네시스 블록을 생성합니다.
             </p>
           </div>
@@ -159,7 +159,7 @@ export function AdminTab({
 
         {/* Preset Selector */}
         <div>
-          <label style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label style={{ fontSize: '12px', color: '#b45309', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Sparkles size={14} /> 추천 토큰 프리셋 템플릿 (원클릭 선택)
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
@@ -170,26 +170,26 @@ export function AdminTab({
                 className="glass-card"
                 style={{
                   padding: '12px 16px', cursor: 'pointer',
-                  border: customCoinName === p.name ? '1px solid #fbbf24' : '1px solid rgba(255,255,255,0.08)',
-                  background: customCoinName === p.name ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.02)',
+                  border: customCoinName === p.name ? '2px solid #d97706' : '1px solid #e2e8f0',
+                  background: customCoinName === p.name ? 'rgba(254,243,199,0.9)' : '#ffffff',
                   transition: 'all 0.2s ease'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '14px', color: 'white' }}>{p.name}</strong>
-                  <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '700' }}>{p.supply.toLocaleString()} 개</span>
+                  <strong style={{ fontSize: '14px', color: '#0f172a' }}>{p.name}</strong>
+                  <span style={{ fontSize: '11px', color: '#b45309', fontWeight: '700' }}>{p.supply.toLocaleString()} 개</span>
                 </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{p.desc}</p>
+                <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{p.desc}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Issuance Form */}
-        <form onSubmit={handleMintCoin} style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(7,9,19,0.5)', padding: '20px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <form onSubmit={handleMintCoin} style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
                 1. 코인 심볼 이름 (Token Name)
               </label>
               <input
@@ -204,7 +204,7 @@ export function AdminTab({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
                 2. 토큰 유효기간 (Expiry Date)
               </label>
               <input
@@ -218,7 +218,7 @@ export function AdminTab({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
                 3. 제네시스 최초 발행량 (Genesis Total Supply)
               </label>
               <input
@@ -238,8 +238,8 @@ export function AdminTab({
             className="neon-btn btn-primary"
             style={{
               width: '100%', padding: '16px', fontSize: '16px', fontWeight: '800', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #fbbf24, #d97706, #b45309)',
-              boxShadow: '0 6px 25px rgba(245,158,11,0.35)', color: 'white',
+              background: 'linear-gradient(135deg, #d97706, #b45309)',
+              boxShadow: '0 6px 20px rgba(217,119,6,0.3)', color: 'white',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '6px'
             }}
           >
@@ -249,38 +249,38 @@ export function AdminTab({
         </form>
 
         {/* Active Coin Status Summary */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '14px 18px', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: '#ffffff', padding: '14px 18px', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>현재 구동 코인:</span>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: '#fbbf24' }}>{bc.coinName}</div>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>현재 구동 코인:</span>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#b45309' }}>{bc.coinName}</div>
           </div>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>유효기간 상태:</span>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: isCoinExpired ? '#ef4444' : '#10b981' }}>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>유효기간 상태:</span>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: isCoinExpired ? '#dc2626' : '#0d9488' }}>
               {bc.expiryDate} {isCoinExpired ? '(만료됨)' : '(활성화)'}
             </div>
           </div>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>총 제네시스 공급량:</span>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: 'white' }}>{bc.totalSupply.toLocaleString()} 개</div>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>총 제네시스 공급량:</span>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{bc.totalSupply.toLocaleString()} 개</div>
           </div>
         </div>
       </div>
 
-      {/* LOWER GRID: NETWORK PARAMS & DANGER ZONE */}
+      {/* LOWER GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
 
         {/* SECTION 2: NETWORK PARAMETERS */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Settings size={18} color="var(--neon-blue)" />
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Settings size={18} color="#4f46e5" />
             ⚙️ 블록체인 네트워크 매개변수 설정
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                작업 증명 (PoW) 채굴 난이도 (1 ~ 4): <strong style={{ color: '#60a5fa' }}>Level {difficulty}</strong>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
+                작업 증명 (PoW) 채굴 난이도 (1 ~ 4): <strong style={{ color: '#4f46e5' }}>Level {difficulty}</strong>
               </label>
               <input
                 type="range"
@@ -288,9 +288,9 @@ export function AdminTab({
                 max="4"
                 value={difficulty}
                 onChange={e => setDifficulty(parseInt(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--neon-blue)' }}
+                style={{ width: '100%', accentColor: '#4f46e5' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
                 <span>난이도 1 (즉시 생성)</span>
                 <span>{difficulty >= 3 ? '난이도 높음 (수초 소요)' : '보통'}</span>
                 <span>난이도 4 (복잡)</span>
@@ -298,7 +298,7 @@ export function AdminTab({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
                 블록 채굴 보상액 ({bc.coinName})
               </label>
               <input
@@ -310,7 +310,7 @@ export function AdminTab({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
                 마이너(Miner) 수수료 수취 지갑 주소
               </label>
               <input
@@ -321,16 +321,16 @@ export function AdminTab({
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: 'white', display: 'block' }}>트랜잭션 즉시 자동 채굴 (Auto-Mine)</span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>TX 발생 시 멤풀 대기 없이 자동 채굴을 돌립니다.</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'block' }}>트랜잭션 즉시 자동 채굴 (Auto-Mine)</span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>TX 발생 시 멤풀 대기 없이 자동 채굴을 돌립니다.</span>
               </div>
               <input
                 type="checkbox"
                 checked={autoMine}
                 onChange={e => setAutoMine(e.target.checked)}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--neon-emerald)', cursor: 'pointer' }}
+                style={{ width: '20px', height: '20px', accentColor: '#0d9488', cursor: 'pointer' }}
               />
             </div>
           </div>
@@ -338,30 +338,30 @@ export function AdminTab({
 
         {/* SECTION 3: SYSTEM MONITOR & RESET */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={18} color="var(--neon-purple)" />
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={18} color="#7c3aed" />
             📊 원장 상태 및 비상 제어 (Danger Zone)
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>누적 블록</span>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>{bc.chain.length} 개</div>
+            <div style={{ padding: '12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>누적 블록</span>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{bc.chain.length} 개</div>
             </div>
-            <div style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>총 처리 TX</span>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>{stats.totalTxCount} 건</div>
+            <div style={{ padding: '12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>총 처리 TX</span>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{stats.totalTxCount} 건</div>
             </div>
           </div>
 
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6', background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ fontSize: '13px', color: 'white', marginBottom: '4px', fontWeight: '700' }}>💡 어드민 관제 안내</h4>
+          <div style={{ fontSize: '12px', color: '#475569', lineHeight: '1.6', background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <h4 style={{ fontSize: '13px', color: '#0f172a', marginBottom: '4px', fontWeight: '700' }}>💡 어드민 관제 안내</h4>
             <p>
               본 시스템은 과학전람회 행사용 코인 경제 시뮬레이터입니다. 신규 토큰 발행 시 전체 블록체인이 재시작되며 새로운 스마트 계약 환경이 구성됩니다.
             </p>
           </div>
 
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px', marginTop: 'auto' }}>
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', marginTop: 'auto' }}>
             <button
               onClick={handleReset}
               className="neon-btn btn-danger"
