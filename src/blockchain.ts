@@ -1,109 +1,13 @@
-// Sync SHA-256 function in pure TypeScript
-export function sha256(ascii: string): string {
-  // Convert UTF-16 string to UTF-8 binary string to support non-ASCII (e.g. Korean) characters
-  try {
-    ascii = unescape(encodeURIComponent(ascii));
-  } catch (e) {
-    // fallback if encodeURIComponent fails
-  }
+// SHA-256 (crypto-js) and ECDSA signing (elliptic) — see ./cryptoEngine.ts
+import {
+  sha256,
+  signTransactionPayload,
+  verifyTransactionSignature,
+  getPublicKeyFromPrivateKey,
+  addressFromPublicKey,
+} from './cryptoEngine';
 
-  function rightRotate(value: number, amount: number) {
-    return (value >>> amount) | (value << (32 - amount));
-  }
-
-  const mathPow = Math.pow;
-  const maxWord = mathPow(2, 32);
-  const lengthProperty = 'length';
-  let i, j;
-  let result = '';
-
-  const words: number[] = [];
-  const asciiLength = ascii[lengthProperty];
-
-  const hash: number[] = [];
-  const k: number[] = [];
-  let primeCounter = 0;
-
-  const isPrime = function (n: number) {
-    for (let factor = 2; factor * factor <= n; factor++) {
-      if (n % factor === 0) return false;
-    }
-    return true;
-  };
-
-  for (let candidate = 2; primeCounter < 64; candidate++) {
-    if (isPrime(candidate)) {
-      if (primeCounter < 8) {
-        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
-      }
-      k[primeCounter] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
-      primeCounter++;
-    }
-  }
-
-  ascii += '\x80';
-  while ((ascii[lengthProperty] % 64) - 56) ascii += '\x00';
-  for (i = 0; i < ascii[lengthProperty]; i++) {
-    j = ascii.charCodeAt(i);
-    if (j >> 8) return ''; // ASCII check
-    words[i >> 2] |= j << ((3 - (i % 4)) * 8);
-  }
-  words[words[lengthProperty]] = ((asciiLength * 8) / maxWord) | 0;
-  words[words[lengthProperty]] = (asciiLength * 8) | 0;
-
-  for (j = 0; j < words[lengthProperty]; j += 16) {
-    const w = words.slice(j, j + 16);
-    const oldHash = hash.slice(0);
-    for (i = 0; i < 64; i++) {
-      let wItem = w[i];
-      if (i >= 16) {
-        const s0 =
-          rightRotate(w[i - 15], 7) ^
-          rightRotate(w[i - 15], 18) ^
-          (w[i - 15] >>> 3);
-        const s1 =
-          rightRotate(w[i - 2], 17) ^
-          rightRotate(w[i - 2], 19) ^
-          (w[i - 2] >>> 10);
-        wItem = w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
-      }
-      const ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
-      const maj =
-        (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
-      const s0_h =
-        rightRotate(hash[0], 2) ^
-        rightRotate(hash[0], 13) ^
-        rightRotate(hash[0], 22);
-      const s1_h =
-        rightRotate(hash[4], 6) ^
-        rightRotate(hash[4], 11) ^
-        rightRotate(hash[4], 25);
-      const temp1 = hash[7] + s1_h + ch + k[i] + (wItem || 0);
-      const temp2 = s0_h + maj;
-
-      hash[7] = hash[6];
-      hash[6] = hash[5];
-      hash[5] = hash[4];
-      hash[4] = (hash[3] + temp1) | 0;
-      hash[3] = hash[2];
-      hash[2] = hash[1];
-      hash[1] = hash[0];
-      hash[0] = (temp1 + temp2) | 0;
-    }
-    for (i = 0; i < 8; i++) {
-      hash[i] = (hash[i] + oldHash[i]) | 0;
-    }
-  }
-
-  for (i = 0; i < 8; i++) {
-    let val = hash[i];
-    if (val < 0) val += maxWord;
-    let str = val.toString(16);
-    while (str[lengthProperty] < 8) str = '0' + str;
-    result += str;
-  }
-  return result;
-}
+export { sha256 };
 
 export interface ITransaction {
   id: string;
@@ -113,11 +17,13 @@ export interface ITransaction {
   timestamp: number;
   purpose: string;
   signature: string;
+  publicKey: string;
 }
 
 export class Transaction implements ITransaction {
   public id: string;
   public signature: string = '';
+  public publicKey: string = '';
   public fromAddress: string;
   public toAddress: string;
   public amount: number;
@@ -153,7 +59,11 @@ export class Transaction implements ITransaction {
     if (privateKey === '') {
       throw new Error('Cannot sign with an empty key');
     }
-    this.signature = sha256(this.id + privateKey);
+    this.publicKey = getPublicKeyFromPrivateKey(privateKey);
+    if (addressFromPublicKey(this.publicKey) !== this.fromAddress) {
+      throw new Error('You cannot sign transactions for other wallets');
+    }
+    this.signature = signTransactionPayload(this.id, privateKey);
   }
 
   isValid(): boolean {
@@ -164,7 +74,10 @@ export class Transaction implements ITransaction {
     if (!this.signature || this.signature.length === 0) {
       return false;
     }
-    return true;
+    if (!this.publicKey || addressFromPublicKey(this.publicKey) !== this.fromAddress) {
+      return false; // signature's public key does not belong to the sender's address
+    }
+    return verifyTransactionSignature(this.id, this.signature, this.publicKey);
   }
 }
 
@@ -448,6 +361,7 @@ export class Blockchain {
           purpose: tx.purpose,
           timestamp: tx.timestamp,
           signature: tx.signature,
+          publicKey: tx.publicKey,
         })),
       })),
     }, null, 2);
@@ -464,6 +378,7 @@ export class Blockchain {
           const tx = new Transaction(t.fromAddress, t.toAddress, t.amount, t.purpose, t.timestamp);
           tx.id = t.id || tx.id;
           tx.signature = t.signature || '';
+          tx.publicKey = t.publicKey || '';
           return tx;
         }) : [];
         const block = new Block(b.index, b.timestamp, txs, b.previousHash);
@@ -478,6 +393,7 @@ export class Blockchain {
         const tx = new Transaction(t.fromAddress, t.toAddress, t.amount, t.purpose, t.timestamp);
         tx.id = t.id || tx.id;
         tx.signature = t.signature || '';
+        tx.publicKey = t.publicKey || '';
         return tx;
       });
     }

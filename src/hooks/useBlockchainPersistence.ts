@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Blockchain } from '../blockchain';
 import type { VisitorWallet, Booth } from '../types';
 
+// v3: wallets/transactions now use real ECDSA (secp256k1) keypairs and signatures
+// instead of the old toy hash scheme, so v2 data is incompatible and not migrated.
 const STORAGE_KEYS = {
-  LEDGER: 'sciblockchain_ledger_v2',
-  VISITORS: 'sciblockchain_visitors_v2',
-  BOOTHS: 'sciblockchain_booths_v2',
-  PROCESSED_TXS: 'sciblockchain_processed_txs_v2',
+  LEDGER: 'sciblockchain_ledger_v3',
+  VISITORS: 'sciblockchain_visitors_v3',
+  BOOTHS: 'sciblockchain_booths_v3',
+  PROCESSED_TXS: 'sciblockchain_processed_txs_v3',
 };
 
 export function loadSavedBlockchain(): Blockchain | null {

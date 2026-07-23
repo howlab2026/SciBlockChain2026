@@ -1,4 +1,5 @@
 // Shared types for SciBlockChain application
+import { generateCryptoKeyPair } from './cryptoEngine';
 
 export interface Booth {
   id: string;
@@ -18,9 +19,11 @@ export interface VisitorWallet {
   rfidUid?: string;
   /** 표시 이름 */
   name: string;
-  /** 블록체인 주소 */
+  /** 블록체인 주소 (공개키에서 파생) */
   address: string;
-  /** 트랜잭션 서명용 개인키 */
+  /** 트랜잭션 서명 검증용 공개키 (ECDSA secp256k1) */
+  publicKey: string;
+  /** 트랜잭션 서명용 개인키 (ECDSA secp256k1) */
   privateKey: string;
 }
 
@@ -35,44 +38,33 @@ export interface ReceiptData {
   coinName: string;
 }
 
-/** 이름과 로그인 ID로 지갑 생성 */
+/** 이름과 로그인 ID로 지갑 생성 (실제 ECDSA 키쌍 사용) */
 export function makeWallet(name: string, loginId?: string, password?: string): VisitorWallet {
-  // 주소는 name 기반 해시로 생성 (고유성 보장)
   const seed = loginId || name;
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = ((h << 5) - h) + seed.charCodeAt(i);
-    h |= 0;
-  }
-  const abs = Math.abs(h);
-  const hex = abs.toString(16).padStart(8, '0').substring(0, 8);
+  const { address, publicKey, privateKey } = generateCryptoKeyPair(seed);
+  const hex = address.replace('0xVisitor_', '');
   const resolvedId = loginId || `visitor_${hex}`;
   const resolvedPw = password || hex;
   return {
     loginId: resolvedId,
     password: resolvedPw,
     name,
-    address: `0xVisitor_${hex}`,
-    privateKey: `pv_${hex}_${Math.abs(h * 99).toString(16).substring(0, 8)}`,
+    address,
+    publicKey,
+    privateKey,
   };
 }
 
-/** RFID UID로 지갑 생성 */
+/** RFID UID로 지갑 생성 (실제 ECDSA 키쌍 사용) */
 export function makeRfidWallet(name: string, rfidUid: string): VisitorWallet {
-  let h = 0;
-  for (let i = 0; i < rfidUid.length; i++) {
-    h = ((h << 5) - h) + rfidUid.charCodeAt(i);
-    h |= 0;
-  }
-  const abs = Math.abs(h);
-  const hex = abs.toString(16).padStart(8, '0').substring(0, 8);
+  const { address, publicKey, privateKey } = generateCryptoKeyPair(rfidUid);
   return {
     loginId: `rfid_${rfidUid}`,
     password: rfidUid,
     rfidUid,
     name,
-    address: `0xVisitor_${hex}`,
-    privateKey: `pv_${hex}_${Math.abs(h * 99).toString(16).substring(0, 8)}`,
+    address,
+    publicKey,
+    privateKey,
   };
 }
-
