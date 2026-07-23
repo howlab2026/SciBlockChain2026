@@ -1,5 +1,12 @@
 // Sync SHA-256 function in pure TypeScript
 export function sha256(ascii: string): string {
+  // Convert UTF-16 string to UTF-8 binary string to support non-ASCII (e.g. Korean) characters
+  try {
+    ascii = unescape(encodeURIComponent(ascii));
+  } catch (e) {
+    // fallback if encodeURIComponent fails
+  }
+
   function rightRotate(value: number, amount: number) {
     return (value >>> amount) | (value << (32 - amount));
   }
@@ -150,6 +157,9 @@ export class Transaction implements ITransaction {
   }
 
   isValid(): boolean {
+    if (this.id !== this.calculateHash()) {
+      return false; // Transaction payload was tampered!
+    }
     if (this.fromAddress === 'SYSTEM' || this.fromAddress === 'CARD_PAYMENT') return true;
     if (!this.signature || this.signature.length === 0) {
       return false;
@@ -291,6 +301,9 @@ export class Blockchain {
       if (trans.fromAddress === address) {
         balance -= trans.amount;
       }
+      if (trans.toAddress === address) {
+        balance += trans.amount;
+      }
     }
     
     return balance;
@@ -418,7 +431,9 @@ export class Blockchain {
       expiryDate: this.expiryDate,
       totalSupply: this.totalSupply,
       difficulty: this.difficulty,
+      miningReward: this.miningReward,
       exportedAt: new Date().toISOString(),
+      pendingTransactions: this.pendingTransactions,
       chain: this.chain.map(b => ({
         index: b.index,
         timestamp: b.timestamp,
@@ -432,9 +447,43 @@ export class Blockchain {
           amount: tx.amount,
           purpose: tx.purpose,
           timestamp: tx.timestamp,
+          signature: tx.signature,
         })),
       })),
     }, null, 2);
   }
+
+  static fromJSON(data: any): Blockchain {
+    const bc = new Blockchain(data.coinName || 'SciBlockChain', data.expiryDate || '2026-12-31', data.totalSupply || 1000000);
+    if (data.difficulty) bc.difficulty = data.difficulty;
+    if (data.miningReward) bc.miningReward = data.miningReward;
+    
+    if (Array.isArray(data.chain) && data.chain.length > 0) {
+      bc.chain = data.chain.map((b: any) => {
+        const txs = Array.isArray(b.transactions) ? b.transactions.map((t: any) => {
+          const tx = new Transaction(t.fromAddress, t.toAddress, t.amount, t.purpose, t.timestamp);
+          tx.id = t.id || tx.id;
+          tx.signature = t.signature || '';
+          return tx;
+        }) : [];
+        const block = new Block(b.index, b.timestamp, txs, b.previousHash);
+        block.hash = b.hash;
+        block.nonce = b.nonce;
+        return block;
+      });
+    }
+
+    if (Array.isArray(data.pendingTransactions)) {
+      bc.pendingTransactions = data.pendingTransactions.map((t: any) => {
+        const tx = new Transaction(t.fromAddress, t.toAddress, t.amount, t.purpose, t.timestamp);
+        tx.id = t.id || tx.id;
+        tx.signature = t.signature || '';
+        return tx;
+      });
+    }
+
+    return bc;
+  }
 }
+
 

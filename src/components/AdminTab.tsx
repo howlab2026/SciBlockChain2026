@@ -1,6 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Settings, Coins, AlertTriangle, Sparkles, Activity } from 'lucide-react';
 import { Blockchain } from '../blockchain';
+import { clearBlockchainStorage } from '../hooks/useBlockchainPersistence';
+import type { Booth } from '../types';
 import type { ToastType } from '../hooks/useToast';
 
 interface AdminTabProps {
@@ -20,6 +22,9 @@ interface AdminTabProps {
   onConfirm: (title: string, message: string, onOk: () => void) => void;
   setProcessedTxIds: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   setOriginalTransactions: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  booths: Booth[];
+  setBooths: React.Dispatch<React.SetStateAction<Booth[]>>;
+  setActiveBoothId: (id: string) => void;
 }
 
 const PRESET_COINS = [
@@ -33,13 +38,46 @@ export function AdminTab({
   difficulty, setDifficulty, miningReward, setMiningReward,
   minerAddress, setMinerAddress, autoMine, setAutoMine,
   isCoinExpired, addToast, onConfirm, setProcessedTxIds, setOriginalTransactions,
+  booths, setBooths, setActiveBoothId,
 }: AdminTabProps) {
   const bc = blockchainRef.current;
   const [customCoinName, setCustomCoinName] = useState(bc.coinName);
   const [customExpiryDate, setCustomExpiryDate] = useState(bc.expiryDate);
   const [customTotalSupply, setCustomTotalSupply] = useState(bc.totalSupply);
 
+  // 신규 부스 등록 폼 상태
+  const [newBoothName, setNewBoothName] = useState('');
+  const [newBoothCost, setNewBoothCost] = useState(10);
+  const [newBoothDesc, setNewBoothDesc] = useState('');
+
   const stats = bc.getBlockStats();
+
+  const handleCreateBooth = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBoothName.trim()) {
+      addToast('error', '입력 오류', '부스 이름을 입력해 주세요.');
+      return;
+    }
+    let hash = 0;
+    for (let i = 0; i < newBoothName.length; i++) {
+      hash = ((hash << 5) - hash) + newBoothName.charCodeAt(i); hash |= 0;
+    }
+    const boothId = `0xBooth_${Math.abs(hash).toString(16).substring(0, 8)}`;
+    setBooths(prev => [...prev, { id: boothId, name: newBoothName.trim(), description: newBoothDesc.trim() || '과학 체험 부스', cost: newBoothCost, visits: 0, revenue: 0 }]);
+    setNewBoothName(''); setNewBoothCost(10); setNewBoothDesc('');
+    setActiveBoothId(boothId);
+    addToast('success', '🎪 신규 부스 등록 완료!', `${newBoothName} 부스가 시스템에 성공적으로 등록되었습니다.`);
+  };
+
+  const getBoothStats = (boothId: string) => {
+    let visits = 0, revenue = 0;
+    bc.chain.forEach(block => {
+      block.transactions.forEach(tx => {
+        if (tx.toAddress === boothId && tx.fromAddress !== 'SYSTEM') { visits++; revenue += tx.amount; }
+      });
+    });
+    return { visits, revenue };
+  };
 
   const handleMintCoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,22 +135,22 @@ export function AdminTab({
       {/* TOP BANNER / TITLE */}
       <div className="glass-card" style={{
         padding: '24px 28px',
-        background: 'linear-gradient(135deg, rgba(243,232,255,0.9), rgba(254,243,199,0.9))',
-        border: '1px solid rgba(192,132,252,0.6)',
+        background: '#fef3c7',
+        border: '1px solid #fde68a',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
             width: '52px', height: '52px', borderRadius: '16px',
-            background: 'linear-gradient(135deg, #a855f7, #d97706)',
+            backgroundColor: '#d97706',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(168,85,247,0.3)'
+            boxShadow: '0 4px 12px rgba(217,119,6,0.2)'
           }}>
             <Coins size={28} color="white" />
           </div>
           <div>
             <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>
-              🛡️ 시스템 관리자 관제 센터 (Admin Control Center)
+              🛡️ 시스템 관리자 관제 센터
             </h2>
             <p style={{ fontSize: '13px', color: '#475569', marginTop: '3px' }}>
               신규 코인 민팅, 스마트 계약 설정, 네트워크 채굴 난이도 조절 및 원장 무결성을 관제합니다.
@@ -135,9 +173,9 @@ export function AdminTab({
       {/* SECTION 1: PROMINENT COIN ISSUANCE PANEL */}
       <div className="glass-card" style={{
         padding: '28px',
-        border: '2px solid rgba(245,158,11,0.5)',
-        boxShadow: '0 10px 40px rgba(245,158,11,0.12)',
-        background: 'linear-gradient(180deg, rgba(254,243,199,0.5) 0%, rgba(255,255,255,0.95) 100%)',
+        border: '2px solid #fde68a',
+        boxShadow: '0 8px 24px rgba(245,158,11,0.08)',
+        background: '#fffbeb',
         display: 'flex', flexDirection: 'column', gap: '22px'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
@@ -148,7 +186,7 @@ export function AdminTab({
               </span>
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Coins size={22} color="#d97706" />
-                🪙 신규 코인 발행 &amp; 스마트 계약 구동 (Coin Issuance &amp; Minting)
+                🪙 신규 코인 발행 &amp; 스마트 계약 구동
               </h3>
             </div>
             <p style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>
@@ -190,7 +228,7 @@ export function AdminTab({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
-                1. 코인 심볼 이름 (Token Name)
+                1. 코인 심볼 이름
               </label>
               <input
                 type="text"
@@ -205,7 +243,7 @@ export function AdminTab({
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
-                2. 토큰 유효기간 (Expiry Date)
+                2. 토큰 유효기간
               </label>
               <input
                 type="date"
@@ -219,7 +257,7 @@ export function AdminTab({
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>
-                3. 제네시스 최초 발행량 (Genesis Total Supply)
+                3. 제네시스 최초 발행량
               </label>
               <input
                 type="number"
@@ -238,13 +276,13 @@ export function AdminTab({
             className="neon-btn btn-primary"
             style={{
               width: '100%', padding: '16px', fontSize: '16px', fontWeight: '800', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #d97706, #b45309)',
-              boxShadow: '0 6px 20px rgba(217,119,6,0.3)', color: 'white',
+              backgroundColor: '#d97706',
+              boxShadow: '0 4px 12px rgba(217,119,6,0.2)', color: 'white',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '6px'
             }}
           >
             <Coins size={20} />
-            🚀 신규 코인 발행 및 스마트 계약 배포 (Mint &amp; Deploy)
+            🚀 신규 코인 발행 및 스마트 계약 배포
           </button>
         </form>
 
@@ -280,7 +318,7 @@ export function AdminTab({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
-                작업 증명 (PoW) 채굴 난이도 (1 ~ 4): <strong style={{ color: '#4f46e5' }}>Level {difficulty}</strong>
+                작업 증명 (PoW) 채굴 난이도 (1 ~ 4): <strong style={{ color: '#4f46e5' }}>레벨 {difficulty}</strong>
               </label>
               <input
                 type="range"
@@ -311,7 +349,7 @@ export function AdminTab({
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
-                마이너(Miner) 수수료 수취 지갑 주소
+                마이너 수수료 수취 지갑 주소
               </label>
               <input
                 type="text"
@@ -323,7 +361,7 @@ export function AdminTab({
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'block' }}>트랜잭션 즉시 자동 채굴 (Auto-Mine)</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', display: 'block' }}>트랜잭션 즉시 자동 채굴</span>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>TX 발생 시 멤풀 대기 없이 자동 채굴을 돌립니다.</span>
               </div>
               <input
@@ -340,7 +378,7 @@ export function AdminTab({
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Activity size={18} color="#7c3aed" />
-            📊 원장 상태 및 비상 제어 (Danger Zone)
+            📊 원장 상태 및 비상 제어
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -357,27 +395,165 @@ export function AdminTab({
           <div style={{ fontSize: '12px', color: '#475569', lineHeight: '1.6', background: '#ffffff', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
             <h4 style={{ fontSize: '13px', color: '#0f172a', marginBottom: '4px', fontWeight: '700' }}>💡 어드민 관제 안내</h4>
             <p>
-              본 시스템은 과학전람회 행사용 코인 경제 시뮬레이터입니다. 신규 토큰 발행 시 전체 블록체인이 재시작되며 새로운 스마트 계약 환경이 구성됩니다.
+              본 시스템은 과학전람회 행사용 코인 경제 시스템입니다. 신규 토큰 발행 시 전체 블록체인이 재설정되며 새로운 스마트 계약 환경이 구성됩니다.
             </p>
           </div>
 
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', marginTop: 'auto' }}>
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '14px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
-              onClick={handleReset}
+              onClick={() => {
+                const dataStr = bc.exportChainData();
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${bc.coinName}_ledger_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                addToast('success', '원장 내보내기 성공', '현재 블록체인 거래 원장이 JSON 파일로 다운로드되었습니다.');
+              }}
+              className="neon-btn btn-secondary"
+              style={{ width: '100%', padding: '10px', fontSize: '12px' }}
+            >
+              📥 원장 데이터 백업/다운로드 (JSON)
+            </button>
+            <button
+              onClick={() => {
+                handleReset();
+                clearBlockchainStorage();
+              }}
               className="neon-btn btn-danger"
               style={{
-                width: '100%', padding: '13px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                width: '100%', padding: '12px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
               }}
             >
               <AlertTriangle size={16} />
-              💥 원장 전체 초기화 (Reset Ledger)
+              💥 원장 및 저장소 전체 초기화
             </button>
           </div>
         </div>
 
       </div>
 
+      {/* SECTION 4: BOOTH REGISTRATION & BOOTH MONITORING */}
+      <div className="glass-card" style={{
+        padding: '28px',
+        border: '1px solid #cbd5e1',
+        background: '#ffffff',
+        display: 'flex', flexDirection: 'column', gap: '20px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🎪 신규 체험부스 등록 및 실시간 부스 모니터링
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+              어드민 권한으로 과학제전에 참여할 신규 체험부스를 등록하고 실시간 결제/수익 현황을 모니터링합니다.
+            </p>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: '700', color: '#0d9488', background: '#ccfbf1', padding: '4px 12px', borderRadius: '12px' }}>
+            등록된 부스: {booths.length} 개
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+
+          {/* 신규 부스 등록 폼 */}
+          <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ➕ 신규 체험부스 등록
+            </h4>
+            <form onSubmit={handleCreateBooth} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#475569', fontWeight: '600', marginBottom: '4px' }}>부스 이름</label>
+                <input
+                  type="text"
+                  placeholder="예: 양자 파동 체험관"
+                  value={newBoothName}
+                  onChange={e => setNewBoothName(e.target.value)}
+                  className="neon-input"
+                  style={{ fontSize: '13px', padding: '9px 12px' }}
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#475569', fontWeight: '600', marginBottom: '4px' }}>부스 상세 설명</label>
+                <input
+                  type="text"
+                  placeholder="예: 양자 얽힘과 파동 함수 물리 현상 체험"
+                  value={newBoothDesc}
+                  onChange={e => setNewBoothDesc(e.target.value)}
+                  className="neon-input"
+                  style={{ fontSize: '13px', padding: '9px 12px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#475569', fontWeight: '600', marginBottom: '4px' }}>체험료 (코인 수량)</label>
+                <input
+                  type="number"
+                  placeholder="10"
+                  value={newBoothCost}
+                  onChange={e => setNewBoothCost(parseInt(e.target.value) || 0)}
+                  min="1"
+                  className="neon-input"
+                  style={{ fontSize: '13px', padding: '9px 12px' }}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="neon-btn btn-success"
+                style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '700', borderRadius: '10px', backgroundColor: '#0d9488', marginTop: '4px' }}
+              >
+                🎪 신규 체험부스 시스템 등록
+              </button>
+            </form>
+          </div>
+
+          {/* 등록된 부스 모니터링 목록 (화면 하단까지 유연하게 확장) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' }}>
+              📊 등록 부스 실시간 모니터링
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {booths.map(b => {
+                const bStats = getBoothStats(b.id);
+                return (
+                  <div
+                    key={b.id}
+                    style={{
+                      padding: '14px 16px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {b.name}
+                        <span style={{ fontSize: '11px', color: '#0d9488', background: '#ccfbf1', padding: '2px 8px', borderRadius: '10px' }}>
+                          체험료 {b.cost} 코인
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>{b.description}</div>
+                      <div style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>{b.id}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>
+                        총 방문: <strong style={{ color: '#0f172a' }}>{bStats.visits} 명</strong>
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#0d9488', marginTop: '2px' }}>
+                        +{bStats.revenue} 코인
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }

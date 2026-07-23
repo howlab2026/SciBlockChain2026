@@ -20,22 +20,22 @@ export function TransactionReceipt({ data, onClose }: TransactionReceiptProps) {
 
   const row = (label: string, value: string, mono = false, copyable = false) => (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       padding: '10px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      borderBottom: '1px solid rgba(0,0,0,0.05)',
       gap: '12px',
     }}>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0, paddingTop: '2px' }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', minWidth: 0, flex: 1, justifyContent: 'flex-end' }}>
         <span style={{
-          fontSize: '12px', color: 'white', fontWeight: '600',
+          fontSize: '12px', color: 'var(--text-dark)', fontWeight: '600',
           fontFamily: mono ? 'var(--font-mono)' : 'inherit',
           wordBreak: 'break-all', textAlign: 'right',
         }}>
           {value}
         </span>
         {copyable && (
-          <button onClick={() => copy(value)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0' }}>
+          <button onClick={() => copy(value)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 0 0 0', flexShrink: 0 }}>
             <Copy size={11} />
           </button>
         )}
@@ -44,7 +44,7 @@ export function TransactionReceipt({ data, onClose }: TransactionReceiptProps) {
   );
 
   return (
-    <div style={{
+    <div className="receipt-modal-overlay" style={{
       position: 'fixed', inset: 0,
       backgroundColor: 'rgba(0,0,0,0.8)',
       backdropFilter: 'blur(12px)',
@@ -61,42 +61,41 @@ export function TransactionReceipt({ data, onClose }: TransactionReceiptProps) {
       }}>
         <div style={{
           padding: '28px 28px 20px',
-          background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.1))',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(16,185,129,0.06)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
           textAlign: 'center',
         }}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '50%',
-            background: 'rgba(16,185,129,0.2)',
-            border: '2px solid rgba(16,185,129,0.4)',
+            background: 'rgba(16,185,129,0.1)',
+            border: '2px solid rgba(16,185,129,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <CheckCircle size={28} color="#10b981" />
+            <CheckCircle size={28} color="#0d9488" />
           </div>
           <div>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white' }}>Payment Completed!</h3>
-            <p style={{ fontSize: '13px', color: '#34d399', marginTop: '4px' }}>Permanently recorded on blockchain</p>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-dark)' }}>결제 완료!</h3>
+            <p style={{ fontSize: '13px', color: '#0d9488', marginTop: '4px', fontWeight: '600' }}>블록체인에 영구 기록되었습니다</p>
           </div>
           <div style={{
-            fontSize: '36px', fontWeight: '800', color: 'white',
-            textShadow: '0 0 20px rgba(16,185,129,0.4)',
+            fontSize: '36px', fontWeight: '800', color: 'var(--text-dark)',
           }}>
-            {data.amount.toLocaleString()} <span style={{ fontSize: '18px', color: '#34d399' }}>{data.coinName}</span>
+            {data.amount.toLocaleString()} <span style={{ fontSize: '18px', color: '#0d9488', fontWeight: '700' }}>{data.coinName}</span>
           </div>
         </div>
 
         <div style={{ padding: '20px 28px' }}>
-          {row('Purpose', data.purpose)}
-          {row('TX Hash', data.txId.substring(0, 20) + '...', true, true)}
-          {row('From', data.fromAddress, true)}
-          {row('To', data.toAddress, true)}
-          {row('Block Number', `#${data.blockIndex}`)}
-          {row('Time', `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`)}
+          {row('목적', data.purpose)}
+          {row('TX 해시', data.txId, true, true)}
+          {row('송신자', data.fromAddress, true)}
+          {row('수신자', data.toAddress, true)}
+          {row('블록 번호', `#${data.blockIndex}`)}
+          {row('시간', `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`)}
 
           <div style={{
             margin: '16px 0',
-            borderTop: '2px dashed rgba(255,255,255,0.08)',
+            borderTop: '2px dashed rgba(0,0,0,0.08)',
             position: 'relative',
           }}>
             <div style={{
@@ -106,18 +105,18 @@ export function TransactionReceipt({ data, onClose }: TransactionReceiptProps) {
             }}>SciBlockChain</div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button
               onClick={() => window.print()}
               className="neon-btn btn-secondary"
               style={{ flex: 1, padding: '12px', fontSize: '13px' }}
             >
               <Printer size={14} />
-              Print Receipt
+              영수증 인쇄
             </button>
             <button onClick={handleClose} className="neon-btn btn-success" style={{ flex: 1, padding: '12px', fontSize: '13px' }}>
               <CheckCircle size={14} />
-              Done
+              확인
             </button>
           </div>
         </div>

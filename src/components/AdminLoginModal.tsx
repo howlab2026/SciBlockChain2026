@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Shield, Lock, User, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import type { ToastType } from '../hooks/useToast';
 
 interface AdminLoginModalProps {
@@ -10,6 +11,7 @@ interface AdminLoginModalProps {
 }
 
 export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLoginModalProps) {
+  const { loginAdmin } = useAuth();
   const [adminId, setAdminId] = useState('');
   const [adminPw, setAdminPw] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -24,23 +26,17 @@ export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLog
 
     setTimeout(() => {
       setIsLoading(false);
-      if (adminId.trim() === 'admin' && adminPw === 'admin1234') {
+      if (adminId.trim() === 'admin' && loginAdmin(adminPw)) {
         addToast('success', '관리자 승인 완료!', '시스템 관리자 권한이 부여되었습니다.');
         onSuccess();
         onClose();
         setAdminId('');
         setAdminPw('');
       } else {
-        setErrorMsg('아이디 또는 비밀번호가 일치하지 않습니다. (테스트 계정: admin / admin1234)');
+        setErrorMsg('아이디 또는 비밀번호가 일치하지 않습니다.');
         addToast('error', '로그인 실패', '잘못된 관리자 인증 정보입니다.');
       }
     }, 600);
-  };
-
-  const handleQuickDemoLogin = () => {
-    setAdminId('admin');
-    setAdminPw('admin1234');
-    setErrorMsg('');
   };
 
   return (
@@ -73,7 +69,7 @@ export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLog
           블록체인 네트워크 제어, 신규 코인 발행 및 원장 리셋 권한을 얻으려면 관리자 승인이 필요합니다.
         </p>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <form onSubmit={handleLogin} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: '#475569', marginBottom: '6px', fontWeight: '600' }}>관리자 아이디 (ID)</label>
             <div style={{ position: 'relative' }}>
@@ -82,7 +78,8 @@ export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLog
                 type="text"
                 value={adminId}
                 onChange={e => setAdminId(e.target.value)}
-                placeholder="admin"
+                placeholder=""
+                autoComplete="off"
                 className="neon-input"
                 style={{ paddingLeft: '36px' }}
                 required
@@ -98,7 +95,8 @@ export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLog
                 type="password"
                 value={adminPw}
                 onChange={e => setAdminPw(e.target.value)}
-                placeholder="admin1234"
+                placeholder=""
+                autoComplete="new-password"
                 className="neon-input"
                 style={{ paddingLeft: '36px' }}
                 required
@@ -112,14 +110,11 @@ export function AdminLoginModal({ show, onClose, onSuccess, addToast }: AdminLog
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-            <span style={{ color: '#64748b' }}>테스트용 계정 정보: admin / admin1234</span>
-            <button type="button" onClick={handleQuickDemoLogin} style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}>
-              자동 입력
-            </button>
+          <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '11px', color: '#64748b', textAlign: 'center' }}>
+            💡 <strong>관리자 테스트 계정 힌트:</strong> <code style={{ color: '#7c3aed', fontWeight: '700' }}>admin</code> / <code style={{ color: '#7c3aed', fontWeight: '700' }}>admin1234</code>
           </div>
 
-          <button type="submit" disabled={isLoading} className="neon-btn btn-primary" style={{ width: '100%', padding: '13px', marginTop: '6px', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
+          <button type="submit" disabled={isLoading} className="neon-btn btn-primary" style={{ width: '100%', padding: '13px', marginTop: '2px', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}>
             {isLoading ? '승인 확인 중...' : '관리자 승인 요청'}
           </button>
         </form>

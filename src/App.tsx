@@ -1,11 +1,15 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   Wallet, QrCode, Database, BarChart2,
   Zap, ShieldAlert, Shield, LogOut, Home, Coins
 } from 'lucide-react';
-import type { Booth, VisitorWallet, ReceiptData } from './types';
-import { makeWallet } from './types';
-import { useBlockchain } from './hooks/useBlockchain';
+import type { Booth, ReceiptData } from './types';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { VisitorProvider, useVisitors } from './context/VisitorContext';
+import { BlockchainProvider, useBlockchainContext } from './context/BlockchainContext';
+import {
+  useBlockchainPersistence, loadSavedBooths, loadSavedProcessedTxs
+} from './hooks/useBlockchainPersistence';
 import { useToast } from './hooks/useToast';
 import { Toast } from './components/Toast';
 import { NetworkStatsBar } from './components/NetworkStatsBar';
@@ -18,9 +22,10 @@ import { AnalyticsTab } from './components/AnalyticsTab';
 import { AdminTab } from './components/AdminTab';
 import { LandingScreen } from './components/LandingScreen';
 import { AdminLoginModal } from './components/AdminLoginModal';
+import { VisitorLoginScreen } from './components/VisitorLoginScreen';
 
 type ActiveTab = 'wallet' | 'booth' | 'explorer' | 'analytics' | 'settings';
-type ViewMode = 'landing' | 'app';
+type ViewMode = 'landing' | 'visitorLogin' | 'app';
 
 const DEFAULT_BOOTHS: Booth[] = [
   { id: '0xBooth_a1b2c3d4', name: '로켓 부스', description: '나만의 미니 로켓을 제작하고 발사해보는 과학 실험', cost: 30, visits: 0, revenue: 0 },
@@ -62,7 +67,7 @@ function ExpiredBanner({ expiryDate }: { expiryDate: string }) {
   );
 }
 
-export default function App() {
+function MainApp() {
   const {
     blockchainRef, blockchainTick, updateBlockchainState,
     isMining, miningProgress,
@@ -70,27 +75,25 @@ export default function App() {
     minerAddress, setMinerAddress, autoMine, setAutoMine,
     isChainHealthy, isCoinExpired,
     runMiningProcess, reMineChainFrom,
-  } = useBlockchain();
+  } = useBlockchainContext();
+
+  const { isAdminAuthenticated, logoutAdmin, loggedInVisitor, logoutVisitor } = useAuth();
+  const { visitors, activeVisitorIndex, setActiveVisitorIndex, addVisitor: contextAddVisitor } = useVisitors();
 
   const { toasts, addToast, removeToast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>('landing');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-
   const [activeTab, setActiveTab] = useState<ActiveTab>('wallet');
 
-  const [booths, setBooths] = useState<Booth[]>(DEFAULT_BOOTHS);
+  const [booths, setBooths] = useState<Booth[]>(() => loadSavedBooths() || DEFAULT_BOOTHS);
   const [activeBoothId, setActiveBoothId] = useState(DEFAULT_BOOTHS[0].id);
 
-  const [visitors, setVisitors] = useState<VisitorWallet[]>([
-    makeWallet('이과학'),
-    makeWallet('박과학'),
-  ]);
-  const [activeVisitorIndex, setActiveVisitorIndex] = useState(0);
-
-  const [processedTxIds, setProcessedTxIds] = useState<Record<string, boolean>>({});
+  const [processedTxIds, setProcessedTxIds] = useState<Record<string, boolean>>(() => loadSavedProcessedTxs() || {});
   const [originalTransactions, setOriginalTransactions] = useState<Record<string, number>>({});
+
+  // Enable auto-persistence to localStorage
+  useBlockchainPersistence(blockchainRef, blockchainTick, visitors, booths, processedTxIds);
 
   const [showCardModal, setShowCardModal] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
@@ -102,11 +105,12 @@ export default function App() {
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, show: false }));
 
   const addVisitor = (name: string) => {
-    if (visitors.length >= 6) { addToast('warning', '지갑 한도 초과', '최대 6개의 관람객 지갑을 만들 수 있습니다.'); return; }
-    const newWallet = makeWallet(name);
-    setVisitors(prev => [...prev, newWallet]);
-    setActiveVisitorIndex(visitors.length);
-    addToast('success', '지갑 생성!', `${name}의 지갑이 생성되었습니다.`);
+    const success = contextAddVisitor(name);
+    if (!success) {
+      addToast('warning', '지갑 한도 초과', '최대 6개의 관람객 지갑을 만들 수 있습니다.');
+    } else {
+      addToast('success', '지갑 생성!', `${name}의 지갑이 생성되었습니다.`);
+    }
   };
 
   const coinName = blockchainRef.current.coinName;
@@ -122,15 +126,25 @@ export default function App() {
   };
 
   const handleAdminLoginSuccess = () => {
-    setIsAdminAuthenticated(true);
     setViewMode('app');
     setActiveTab('settings');
+    const adminIdx = visitors.findIndex(v => v.loginId === 'admin');
+    setActiveVisitorIndex(adminIdx >= 0 ? adminIdx : 0);
   };
 
   const handleLogout = () => {
-    setIsAdminAuthenticated(false);
-    if (activeTab === 'settings') setActiveTab('wallet');
-    addToast('info', '관리자 로그아웃', '일반 사용자 모드로 전환되었습니다.');
+    logoutAdmin();
+    logoutVisitor();
+    setActiveVisitorIndex(-1);
+    setViewMode('landing');
+    setActiveTab('wallet');
+    addToast('info', '로그아웃 완료', '모든 세션이 종료되고 메인 화면으로 이동합니다.');
+  };
+
+  const handleVisitorLogout = () => {
+    logoutVisitor();
+    setViewMode('visitorLogin');
+    addToast('info', '로그아웃', '관람객 로그인 화면으로 돌아갑니다.');
   };
 
   const userTabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
@@ -154,7 +168,7 @@ export default function App() {
         <LandingScreen
           blockchainRef={blockchainRef}
           blockchainTick={blockchainTick}
-          onEnterUserMode={() => { setViewMode('app'); if (!isAdminAuthenticated) setActiveTab('wallet'); }}
+          onEnterUserMode={() => setViewMode('visitorLogin')}
           onOpenAdminLogin={() => setShowAdminLoginModal(true)}
         />
         <AdminLoginModal
@@ -168,21 +182,28 @@ export default function App() {
     );
   }
 
+  if (viewMode === 'visitorLogin') {
+    return (
+      <>
+        <VisitorLoginScreen
+          onLoginSuccess={() => setViewMode('app')}
+          addToast={addToast}
+        />
+        <Toast toasts={toasts} onRemove={removeToast} />
+      </>
+    );
+  }
+
   const activeTabs = isAdminAuthenticated ? adminTabs : userTabs;
 
   return (
-    <div id="app-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-deep)' }}>
+    <div id="app-root" className={isAdminAuthenticated ? 'mode-admin' : 'mode-visitor'} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-deep)' }}>
 
       {/* HEADER */}
       <header style={{
         padding: '14px 24px',
-        background: isAdminAuthenticated
-          ? 'linear-gradient(90deg, rgba(243,232,255,0.9), rgba(255,255,255,0.9))'
-          : 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: isAdminAuthenticated
-          ? '1px solid rgba(192,132,252,0.5)'
-          : '1px solid rgba(226,232,240,0.8)',
+        background: isAdminAuthenticated ? '#fae8ff' : '#ffffff',
+        borderBottom: isAdminAuthenticated ? '1px solid #e9d5ff' : '1px solid #e2e8f0',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -190,32 +211,30 @@ export default function App() {
             onClick={() => setViewMode('landing')}
             style={{
               cursor: 'pointer', width: '40px', height: '40px', borderRadius: '12px',
-              background: isAdminAuthenticated
-                ? 'linear-gradient(135deg, #a855f7, #d97706)'
-                : 'linear-gradient(135deg, #6366f1, #3b82f6)',
+              backgroundColor: isAdminAuthenticated ? '#7c3aed' : '#4f46e5',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: isAdminAuthenticated ? '0 4px 15px rgba(168,85,247,0.3)' : '0 4px 15px rgba(99,102,241,0.3)'
+              boxShadow: isAdminAuthenticated ? '0 4px 12px rgba(124,58,237,0.2)' : '0 4px 12px rgba(79,70,229,0.2)'
             }}
           >
             <Zap size={22} color="white" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '19px', fontWeight: '800', background: 'linear-gradient(90deg, #4f46e5, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <h1 style={{ fontSize: '19px', fontWeight: '800', color: isAdminAuthenticated ? '#6b21a8' : '#4338ca' }}>
                 {coinName}
               </h1>
               {isAdminAuthenticated ? (
-                <span style={{ fontSize: '11px', background: 'rgba(245,158,11,0.15)', color: '#b45309', border: '1px solid rgba(245,158,11,0.4)', padding: '3px 10px', borderRadius: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span className="badge-admin" style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Shield size={12} /> 🛡️ 관리자 승인됨
                 </span>
               ) : (
-                <span style={{ fontSize: '11px', background: 'rgba(99,102,241,0.1)', color: '#4338ca', border: '1px solid rgba(99,102,241,0.25)', padding: '3px 10px', borderRadius: '12px', fontWeight: '600' }}>
+                <span className="badge-visitor" style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px' }}>
                   관람객 모드
                 </span>
               )}
             </div>
             <p style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
-              {isAdminAuthenticated ? '시스템 관리자 전용 어드민 관제 센터' : '과학제전 블록체인 부스 결제 시뮬레이션 시스템'}
+              {isAdminAuthenticated ? '시스템 관리자 전용 어드민 관제 센터' : '과학제전 블록체인 부스 결제 시스템'}
             </p>
           </div>
         </div>
@@ -238,23 +257,36 @@ export default function App() {
             >
               <LogOut size={13} /> 관리자 로그아웃
             </button>
-          ) : (
+          ) : !loggedInVisitor ? (
             <button
               onClick={() => setShowAdminLoginModal(true)}
               className="neon-btn btn-primary"
-              style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+              style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '8px', backgroundColor: '#7c3aed' }}
             >
               <Shield size={13} /> 관리자 로그인
             </button>
-          )}
+          ) : null}
 
           {/* Chain health badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: isChainHealthy ? 'rgba(20,184,166,0.1)' : 'rgba(239,68,68,0.1)', borderRadius: '20px', border: `1px solid ${isChainHealthy ? 'rgba(20,184,166,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: isChainHealthy ? '#ccfbf1' : '#fee2e2', borderRadius: '20px', border: `1px solid ${isChainHealthy ? '#99f6e4' : '#fca5a5'}` }}>
             {isChainHealthy
-              ? <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0d9488' }} /><span style={{ fontSize: '11px', color: '#0f766e', fontWeight: '600' }}>Chain OK</span></>
+              ? <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0d9488' }} /><span style={{ fontSize: '11px', color: '#0f766e', fontWeight: '600' }}>체인 정상</span></>
               : <><ShieldAlert size={12} color="#dc2626" className="animate-pulse" /><span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>위변조 감지</span></>
             }
           </div>
+
+          {/* 관람객 로그아웃 버튼 (관리자 모드 아닐 때) */}
+          {!isAdminAuthenticated && loggedInVisitor && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: '#f0fdf4', borderRadius: '20px', border: '1px solid #bbf7d0' }}>
+              <span style={{ fontSize: '12px', color: '#166534', fontWeight: '600' }}>👤 {loggedInVisitor.name}</span>
+              <button
+                onClick={handleVisitorLogout}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '11px', padding: '0', display: 'flex', alignItems: 'center', gap: '3px' }}
+              >
+                <LogOut size={12} />
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -271,28 +303,51 @@ export default function App() {
       {isCoinExpired && <ExpiredBanner expiryDate={expiryDate} />}
 
       {/* TAB NAV */}
-      <nav style={{ display: 'flex', gap: '6px', padding: '0 16px 12px', overflowX: 'auto' }}>
-        {activeTabs.map(tab => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              id={`tab-${tab.id}`}
-              onClick={() => handleTabClick(tab.id)}
-              className={`neon-btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
-              style={{
-                padding: '9px 18px', borderRadius: '10px', fontSize: '13px', whiteSpace: 'nowrap',
-                display: 'flex', alignItems: 'center', gap: '6px', fontWeight: isActive ? '700' : '500',
-                background: isActive && isAdminAuthenticated && tab.id === 'settings'
-                  ? 'linear-gradient(135deg, #7c3aed, #d97706)'
-                  : undefined,
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          );
-        })}
+      <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '0 16px 12px', overflowX: 'auto', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {activeTabs.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`tab-${tab.id}`}
+                onClick={() => handleTabClick(tab.id)}
+                className={`neon-btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
+                style={{
+                  padding: '9px 18px', borderRadius: '10px', fontSize: '13px', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', gap: '6px', fontWeight: isActive ? '700' : '500',
+                  backgroundColor: isActive && isAdminAuthenticated && tab.id === 'settings'
+                    ? '#7c3aed'
+                    : undefined,
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 관리자 모드에서 관람객 지갑 시뮬레이션 활성화 표시 */}
+        {isAdminAuthenticated && visitors[activeVisitorIndex] && (
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '800',
+            color: '#4f46e5',
+            background: '#eff6ff',
+            padding: '8px 16px',
+            borderRadius: '12px',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginLeft: 'auto',
+            boxShadow: '0 4px 10px rgba(79,70,229,0.08)'
+          }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3b82f6' }} />
+            <span>👤 <strong>{visitors[activeVisitorIndex].name}</strong> 님 지갑 사용 중</span>
+          </div>
+        )}
       </nav>
 
       {/* MAIN CONTENT */}
@@ -314,6 +369,7 @@ export default function App() {
             onShowReceipt={setReceiptData}
             addToast={addToast}
             runMiningProcess={runMiningProcess}
+            loggedInVisitor={loggedInVisitor || undefined}
           />
         )}
 
@@ -326,7 +382,6 @@ export default function App() {
             isMining={isMining}
             autoMine={autoMine}
             booths={booths}
-            setBooths={setBooths}
             activeBoothId={activeBoothId}
             setActiveBoothId={setActiveBoothId}
             processedTxIds={processedTxIds}
@@ -334,6 +389,10 @@ export default function App() {
             runMiningProcess={runMiningProcess}
             onShowReceipt={setReceiptData}
             addToast={addToast}
+            visitors={visitors}
+            activeVisitorIndex={activeVisitorIndex}
+            loggedInVisitor={loggedInVisitor || undefined}
+            isAdmin={isAdminAuthenticated}
           />
         )}
 
@@ -360,6 +419,8 @@ export default function App() {
             blockchainRef={blockchainRef}
             blockchainTick={blockchainTick}
             booths={booths}
+            isAdmin={isAdminAuthenticated}
+            currentVisitor={loggedInVisitor || visitors[activeVisitorIndex]}
           />
         )}
 
@@ -381,20 +442,23 @@ export default function App() {
             onConfirm={openConfirm}
             setProcessedTxIds={setProcessedTxIds}
             setOriginalTransactions={setOriginalTransactions}
+            booths={booths}
+            setBooths={setBooths}
+            setActiveBoothId={setActiveBoothId}
           />
         )}
       </main>
 
       {/* FOOTER */}
       <footer style={{ padding: '14px 24px', textAlign: 'center', fontSize: '11px', color: '#64748b', borderTop: '1px solid rgba(226,232,240,0.8)', background: 'rgba(255,255,255,0.7)' }}>
-        © 2026 {coinName} Blockchain EcoSystem · 과학전람회 블록체인 결제 시뮬레이터 v2.0
+        © 2026 {coinName} Blockchain EcoSystem · 과학전람회 블록체인 결제 시스템 v2.0
       </footer>
 
       {/* CARD PAYMENT MODAL */}
       <CardPaymentModal
         show={showCardModal}
         onClose={() => setShowCardModal(false)}
-        visitor={visitors[activeVisitorIndex]}
+        visitor={loggedInVisitor || visitors[activeVisitorIndex]}
         blockchain={blockchainRef}
         updateBlockchainState={updateBlockchainState}
         autoMine={autoMine}
@@ -421,3 +485,16 @@ export default function App() {
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <VisitorProvider>
+        <BlockchainProvider>
+          <MainApp />
+        </BlockchainProvider>
+      </VisitorProvider>
+    </AuthProvider>
+  );
+}
+
