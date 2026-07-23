@@ -29,7 +29,7 @@ interface BoothTabProps {
 export function BoothTab({
   blockchainRef, blockchainTick: _tick, updateBlockchainState,
   isCoinExpired, isMining: _isMining, autoMine, booths, activeBoothId, setActiveBoothId,
-  processedTxIds, setProcessedTxIds, runMiningProcess, onShowReceipt, addToast,
+  runMiningProcess, onShowReceipt, addToast,
   visitors, activeVisitorIndex, loggedInVisitor, isAdmin = false,
 }: BoothTabProps) {
   const bc = blockchainRef.current;
@@ -127,11 +127,13 @@ export function BoothTab({
     }
   };
 
+  /*
   const resetBoothPayment = () => {
     if (activeBoothStatus.txId) {
       setProcessedTxIds(prev => ({ ...prev, [activeBoothStatus.txId]: true }));
     }
   };
+  */
 
   return (
     <div className="tab-content" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px' }}>
@@ -238,11 +240,11 @@ export function BoothTab({
         <div className="glass-card" style={{
           width: '100%', maxWidth: '440px', padding: '20px', textAlign: 'center',
           border: activeBoothStatus.status === 'success' ? '1px solid #6ee7b7'
-                : activeBoothStatus.status === 'pending' ? '1px solid #93c5fd'
-                : '1px solid #cbd5e1',
+            : activeBoothStatus.status === 'pending' ? '1px solid #93c5fd'
+              : '1px solid #cbd5e1',
           background: activeBoothStatus.status === 'success' ? '#ecfdf5'
-                    : activeBoothStatus.status === 'pending' ? '#eff6ff'
-                    : '#f8fafc',
+            : activeBoothStatus.status === 'pending' ? '#eff6ff'
+              : '#f8fafc',
           borderRadius: '16px',
         }}>
           {activeBoothStatus.status === 'idle' && (
