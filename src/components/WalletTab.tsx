@@ -396,7 +396,7 @@ export function WalletTab({
           </div>
         </div>
 
-        {/* 오른쪽 컬럼: 선택된 지갑의 상세 정보 & 시뮬레이션 동작 제어 (송금, 결제, 내역) */}
+        {/* 오른쪽 컬럼: 선택된 지갑의 상세 정보 & 지갑 동작 제어 (송금, 결제, 내역) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {!visitor ? (

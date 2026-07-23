@@ -342,7 +342,7 @@ function MainApp() {
           })}
         </div>
 
-        {/* 관리자 모드에서 관람객 지갑 시뮬레이션 활성화 표시 */}
+        {/* 관리자 모드에서 관람객 지갑 체험 기능 활성화 표시 */}
         {isAdminAuthenticated && visitors[activeVisitorIndex] && (
           <div style={{
             fontSize: '14px',
