@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Wallet, CreditCard, ArrowRight, Lock, Unlock, Copy, Check,
-  Zap, Plus, Users, QrCode, History, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2
+  Zap, Plus, Users, History, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle2
 } from 'lucide-react';
 import { Blockchain, Transaction } from '../blockchain';
 import type { Booth, VisitorWallet, ReceiptData } from '../types';
@@ -26,7 +26,8 @@ interface WalletTabProps {
   visitors: VisitorWallet[];
   activeVisitorIndex: number;
   setActiveVisitorIndex: (i: number) => void;
-  onAddVisitor: (name: string) => void;
+  onAddVisitor: (name: string, loginId?: string, password?: string) => { ok: boolean; error?: string };
+  onUpdateVisitor: (index: number, name: string, loginId: string, password: string) => { ok: boolean; error?: string };
   onShowCardModal: () => void;
   onShowReceipt: (data: ReceiptData) => void;
   addToast: (type: ToastType, title: string, message?: string) => void;
@@ -37,8 +38,8 @@ interface WalletTabProps {
 
 export function WalletTab({
   blockchainRef, blockchainTick: _tick, updateBlockchainState,
-  isCoinExpired, autoMine, booths, activeBoothId,
-  visitors, activeVisitorIndex, setActiveVisitorIndex, onAddVisitor,
+  isCoinExpired, autoMine, booths,
+  visitors, activeVisitorIndex, setActiveVisitorIndex, onAddVisitor, onUpdateVisitor,
   onShowCardModal, onShowReceipt, addToast, runMiningProcess,
   loggedInVisitor,
 }: WalletTabProps) {
@@ -59,7 +60,15 @@ export function WalletTab({
   const [sendPurpose, setSendPurpose] = useState('부스 체험');
   const [enteredKey, setEnteredKey] = useState('');
   const [newVisitorName, setNewVisitorName] = useState('');
+  const [newVisitorId, setNewVisitorId] = useState('');
+  const [newVisitorPw, setNewVisitorPw] = useState('');
   const [showAddVisitor, setShowAddVisitor] = useState(false);
+
+  // 수정용 state
+  const [editingIndex, setEditingIndex] = useState(-1);
+  const [editName, setEditName] = useState('');
+  const [editId, setEditId] = useState('');
+  const [editPw, setEditPw] = useState('');
 
   // effectiveActiveIndex가 -1인 경우 (미선택) visitor는 undefined
   const visitor = effectiveActiveIndex >= 0 ? visitors[effectiveActiveIndex] : undefined;
@@ -91,12 +100,24 @@ export function WalletTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_tick, visitor?.address]);
 
-  const activeBooth = useMemo(() => booths.find(b => b.id === activeBoothId) || booths[0], [booths, activeBoothId]);
-
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopiedText(label);
     setTimeout(() => setCopiedText(''), 2000);
+  };
+
+  const handleStartEdit = (index: number, v: VisitorWallet) => {
+    setEditingIndex(index);
+    setEditName(v.name);
+    setEditId(v.loginId);
+    setEditPw(v.password);
+  };
+
+  const handleSaveEdit = (index: number) => {
+    const res = onUpdateVisitor(index, editName, editId, editPw);
+    if (res && res.ok) {
+      setEditingIndex(-1);
+    }
   };
 
   const handleTransfer = (e: React.FormEvent) => {
@@ -194,20 +215,41 @@ export function WalletTab({
                 onSubmit={e => { 
                   e.preventDefault(); 
                   if (newVisitorName.trim() && visitors.length < 20) { 
-                    onAddVisitor(newVisitorName.trim()); 
-                    setNewVisitorName(''); 
-                    setShowAddVisitor(false); 
+                    const res = onAddVisitor(newVisitorName.trim(), newVisitorId.trim() || undefined, newVisitorPw.trim() || undefined); 
+                    if (res && typeof res === 'object' && !res.ok) {
+                      addToast('error', '지갑 생성 실패', res.error || '오류 발생');
+                    } else {
+                      setNewVisitorName(''); 
+                      setNewVisitorId('');
+                      setNewVisitorPw('');
+                      setShowAddVisitor(false); 
+                    }
                   } 
                 }} 
-                style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1' }}
               >
-                <input
-                  type="text" value={newVisitorName} onChange={e => setNewVisitorName(e.target.value)}
-                  placeholder="신규 관람객 이름 입력" className="neon-input"
-                  style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
-                  required
-                />
-                <button type="submit" className="neon-btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>추가</button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <input
+                    type="text" value={newVisitorName} onChange={e => setNewVisitorName(e.target.value)}
+                    placeholder="관람객 이름 (필수)" className="neon-input"
+                    style={{ flex: '1 1 120px', padding: '6px 10px', fontSize: '12px' }}
+                    required
+                  />
+                  <input
+                    type="text" value={newVisitorId} onChange={e => setNewVisitorId(e.target.value)}
+                    placeholder="로그인 아이디 (선택)" className="neon-input"
+                    style={{ flex: '1 1 120px', padding: '6px 10px', fontSize: '12px' }}
+                  />
+                  <input
+                    type="password" value={newVisitorPw} onChange={e => setNewVisitorPw(e.target.value)}
+                    placeholder="비밀번호 (선택)" className="neon-input"
+                    style={{ flex: '1 1 120px', padding: '6px 10px', fontSize: '12px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                  <button type="button" className="neon-btn btn-secondary" onClick={() => setShowAddVisitor(false)} style={{ padding: '4px 12px', fontSize: '11px' }}>취소</button>
+                  <button type="submit" className="neon-btn btn-primary" style={{ padding: '4px 12px', fontSize: '11px' }}>추가</button>
+                </div>
               </form>
             )}
 
@@ -220,11 +262,86 @@ export function WalletTab({
                     <th style={{ padding: '8px' }}>지갑 주소</th>
                     <th style={{ padding: '8px', textAlign: 'right' }}>보유 잔액</th>
                     <th style={{ padding: '8px', textAlign: 'center' }}>인증 방식</th>
+                    <th style={{ padding: '8px', textAlign: 'center' }}>관리</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allBalances.map((v, i) => {
                     const isSelected = i === effectiveActiveIndex;
+                    const isEditing = i === editingIndex;
+
+                    if (isEditing) {
+                      return (
+                        <tr key={v.address} style={{ borderBottom: '1px solid #cbd5e1', background: '#fef08a' }}>
+                          <td style={{ padding: '8px', verticalAlign: 'middle' }} colSpan={2}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#475569', width: '50px', fontWeight: 'bold' }}>이름:</span>
+                                <input 
+                                  type="text" 
+                                  value={editName} 
+                                  onChange={e => setEditName(e.target.value)} 
+                                  style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }} 
+                                  className="neon-input"
+                                  required
+                                />
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#475569', width: '50px', fontWeight: 'bold' }}>아이디:</span>
+                                <input 
+                                  type="text" 
+                                  value={editId} 
+                                  onChange={e => setEditId(e.target.value)} 
+                                  style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }} 
+                                  className="neon-input"
+                                  required
+                                />
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#475569', width: '50px', fontWeight: 'bold' }}>비밀번호:</span>
+                                <input 
+                                  type="text" 
+                                  value={editPw} 
+                                  onChange={e => setEditPw(e.target.value)} 
+                                  style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }} 
+                                  className="neon-input"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '8px', color: '#0d9488', fontWeight: '700', textAlign: 'right', verticalAlign: 'middle' }}>
+                            {v.balance.toLocaleString()} 코인
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                            {v.rfidUid ? (
+                              <span style={{ fontSize: '10px', background: '#fef3c7', color: '#d97706', padding: '2px 6px', borderRadius: '8px', fontWeight: '600' }}>RFID</span>
+                            ) : (
+                              <span style={{ fontSize: '10px', background: '#e0e7ff', color: '#4f46e5', padding: '2px 6px', borderRadius: '8px', fontWeight: '600' }}>ID/PW</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleSaveEdit(i); }} 
+                                className="neon-btn btn-primary" 
+                                style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px', width: '50px' }}
+                              >
+                                저장
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setEditingIndex(-1); }} 
+                                className="neon-btn btn-secondary" 
+                                style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '4px', width: '50px' }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
                     return (
                       <tr 
                         key={v.address} 
@@ -239,7 +356,14 @@ export function WalletTab({
                       >
                         <td style={{ padding: '10px 8px', color: isSelected ? '#0d9488' : '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isSelected ? '#0d9488' : 'transparent' }} />
-                          {v.name}
+                          <div>
+                            <div>{v.name}</div>
+                            {v.loginId && (
+                              <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                                ID: {v.loginId} / PW: {v.password}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td style={{ padding: '10px 8px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                           {v.address}
@@ -253,6 +377,15 @@ export function WalletTab({
                           ) : (
                             <span style={{ fontSize: '10px', background: '#e0e7ff', color: '#4f46e5', padding: '2px 6px', borderRadius: '8px', fontWeight: '600' }}>ID/PW</span>
                           )}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleStartEdit(i, v); }} 
+                            className="neon-btn btn-secondary" 
+                            style={{ padding: '2px 8px', fontSize: '10px', borderRadius: '4px' }}
+                          >
+                            수정
+                          </button>
                         </td>
                       </tr>
                     );
@@ -553,16 +686,9 @@ export function WalletTab({
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
               <button onClick={onShowCardModal} disabled={isCoinExpired} className="neon-btn btn-primary" style={{ padding: '13px', opacity: isCoinExpired ? 0.5 : 1 }}>
                 <CreditCard size={15} /> 💳 가상 카드 결제 충전
-              </button>
-              <button
-                onClick={() => { if (activeBooth) { handleOneClick(activeBooth); } }}
-                disabled={isCoinExpired}
-                className="neon-btn btn-secondary" style={{ padding: '13px', opacity: isCoinExpired ? 0.5 : 1 }}
-              >
-                <QrCode size={15} /> ⚡ 빠른 부스 결제
               </button>
             </div>
           </>

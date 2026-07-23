@@ -78,7 +78,7 @@ function MainApp() {
   } = useBlockchainContext();
 
   const { isAdminAuthenticated, logoutAdmin, loggedInVisitor, logoutVisitor } = useAuth();
-  const { visitors, activeVisitorIndex, setActiveVisitorIndex, addVisitor: contextAddVisitor } = useVisitors();
+  const { visitors, activeVisitorIndex, setActiveVisitorIndex, addVisitor: contextAddVisitor, updateVisitor: contextUpdateVisitor } = useVisitors();
 
   const { toasts, addToast, removeToast } = useToast();
 
@@ -104,12 +104,25 @@ function MainApp() {
   };
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, show: false }));
 
-  const addVisitor = (name: string) => {
-    const success = contextAddVisitor(name);
-    if (!success) {
-      addToast('warning', '지갑 한도 초과', '최대 6개의 관람객 지갑을 만들 수 있습니다.');
+  const addVisitor = (name: string, loginId?: string, password?: string) => {
+    const res = contextAddVisitor(name, loginId, password);
+    if (!res.ok) {
+      addToast('warning', '지갑 생성 실패', res.error || '알 수 없는 오류');
+      return { ok: false, error: res.error };
     } else {
       addToast('success', '지갑 생성!', `${name}의 지갑이 생성되었습니다.`);
+      return { ok: true };
+    }
+  };
+
+  const updateVisitor = (index: number, name: string, loginId: string, password: string) => {
+    const res = contextUpdateVisitor(index, name, loginId, password);
+    if (!res.ok) {
+      addToast('warning', '지갑 수정 실패', res.error || '알 수 없는 오류');
+      return { ok: false, error: res.error };
+    } else {
+      addToast('success', '지갑 수정 완료!', `${name}의 지갑 정보가 수정되었습니다.`);
+      return { ok: true };
     }
   };
 
@@ -143,8 +156,9 @@ function MainApp() {
 
   const handleVisitorLogout = () => {
     logoutVisitor();
-    setViewMode('visitorLogin');
-    addToast('info', '로그아웃', '관람객 로그인 화면으로 돌아갑니다.');
+    setActiveVisitorIndex(-1);
+    setViewMode('landing');
+    addToast('info', '로그아웃 완료', '처음 화면으로 이동합니다.');
   };
 
   const userTabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
@@ -365,6 +379,7 @@ function MainApp() {
             activeVisitorIndex={activeVisitorIndex}
             setActiveVisitorIndex={setActiveVisitorIndex}
             onAddVisitor={addVisitor}
+            onUpdateVisitor={updateVisitor}
             onShowCardModal={() => setShowCardModal(true)}
             onShowReceipt={setReceiptData}
             addToast={addToast}

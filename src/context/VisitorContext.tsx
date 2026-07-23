@@ -8,7 +8,8 @@ interface VisitorContextType {
   activeVisitorIndex: number;
   activeVisitor: VisitorWallet;
   setActiveVisitorIndex: (index: number) => void;
-  addVisitor: (name: string) => boolean;
+  addVisitor: (name: string, loginId?: string, password?: string) => { ok: boolean; error?: string };
+  updateVisitor: (index: number, name: string, loginId: string, password: string) => { ok: boolean; error?: string };
   setVisitors: Dispatch<SetStateAction<VisitorWallet[]>>;
   /** 자가 등록: 이름 + loginId + password */
   registerVisitor: (name: string, loginId: string, password: string) => { ok: boolean; error?: string };
@@ -40,12 +41,57 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
   });
   const [activeVisitorIndex, setActiveVisitorIndex] = useState(-1);
 
-  const addVisitor = (name: string): boolean => {
-    if (visitors.length >= 20) return false;
-    const newWallet = makeWallet(name);
+  const addVisitor = (name: string, loginId?: string, password?: string): { ok: boolean; error?: string } => {
+    if (visitors.length >= 20) return { ok: false, error: '관람객 수가 최대 한도(20명)에 달했습니다.' };
+    
+    if (loginId && loginId.trim()) {
+      if (loginId.trim().length < 4) {
+        return { ok: false, error: '아이디는 4자 이상이어야 합니다.' };
+      }
+      const exists = visitors.find(v => v.loginId === loginId.trim());
+      if (exists) {
+        return { ok: false, error: '이미 사용 중인 아이디입니다.' };
+      }
+    }
+    
+    if (password && password.trim() && password.trim().length < 4) {
+      return { ok: false, error: '비밀번호는 4자 이상이어야 합니다.' };
+    }
+
+    const newWallet = makeWallet(name.trim(), loginId?.trim(), password?.trim());
     setVisitors(prev => [...prev, newWallet]);
     setActiveVisitorIndex(visitors.length);
-    return true;
+    return { ok: true };
+  };
+
+  const updateVisitor = (index: number, name: string, loginId: string, password: string): { ok: boolean; error?: string } => {
+    if (index < 0 || index >= visitors.length) {
+      return { ok: false, error: '잘못된 인덱스입니다.' };
+    }
+    if (!name.trim() || !loginId.trim() || !password.trim()) {
+      return { ok: false, error: '이름, 아이디, 비밀번호를 모두 입력해주세요.' };
+    }
+    if (loginId.trim().length < 4) {
+      return { ok: false, error: '아이디는 4자 이상이어야 합니다.' };
+    }
+    if (password.trim().length < 4) {
+      return { ok: false, error: '비밀번호는 4자 이상이어야 합니다.' };
+    }
+    const exists = visitors.find((v, idx) => v.loginId === loginId.trim() && idx !== index);
+    if (exists) {
+      return { ok: false, error: '이미 사용 중인 아이디입니다.' };
+    }
+    setVisitors(prev => {
+      const list = [...prev];
+      list[index] = {
+        ...list[index],
+        name: name.trim(),
+        loginId: loginId.trim(),
+        password: password.trim()
+      };
+      return list;
+    });
+    return { ok: true };
   };
 
   const registerVisitor = (name: string, loginId: string, password: string): { ok: boolean; error?: string } => {
@@ -104,6 +150,7 @@ export function VisitorProvider({ children }: { children: ReactNode }) {
       addVisitor, setVisitors,
       registerVisitor, registerRfidVisitor,
       authenticateVisitor, authenticateByRfid,
+      updateVisitor,
     }}>
       {children}
     </VisitorContext.Provider>
